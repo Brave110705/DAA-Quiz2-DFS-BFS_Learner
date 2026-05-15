@@ -3,6 +3,7 @@ import pygame
 BLUE = (80, 140, 255)
 RED = (255, 100, 100)
 ORANGE = (230, 150, 60)
+PURPLE = (150, 100, 230)
 GREEN = (100, 255, 100)
 WHITE = (255, 255, 255)
 BLACK = (30, 30, 30)
@@ -15,10 +16,11 @@ class UI:
         self.font = pygame.font.SysFont(None, 36)
         self.small_font = pygame.font.SysFont(None, 28)
 
-        self.bfs_button = pygame.Rect(80, 620, 140, 50)
-        self.dfs_button = pygame.Rect(240, 620, 140, 50)
-        self.dijkstra_button = pygame.Rect(400, 620, 140, 50)
-        self.replay_button = pygame.Rect(560, 620, 140, 50)
+        self.bfs_button = pygame.Rect(30, 620, 140, 50)
+        self.dfs_button = pygame.Rect(180, 620, 140, 50)
+        self.dijkstra_button = pygame.Rect(330, 620, 140, 50)
+        self.greedy_button = pygame.Rect(480, 620, 140, 50)
+        self.replay_button = pygame.Rect(630, 620, 140, 50)
 
     def _draw_button(self, screen, rect, color, label):
 
@@ -32,6 +34,7 @@ class UI:
         self._draw_button(screen, self.bfs_button, BLUE, "BFS")
         self._draw_button(screen, self.dfs_button, RED, "DFS")
         self._draw_button(screen, self.dijkstra_button, ORANGE, "Dijkstra")
+        self._draw_button(screen, self.greedy_button, PURPLE, "Greedy")
         self._draw_button(screen, self.replay_button, GREEN, "Replay")
 
         score_text = self.small_font.render(

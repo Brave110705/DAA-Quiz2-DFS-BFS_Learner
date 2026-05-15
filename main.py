@@ -17,12 +17,13 @@ ALGORITHMS = {
     "BFS": Solver.bfs,
     "DFS": Solver.dfs,
     "Dijkstra": Solver.dijkstra,
+    "Greedy": Solver.greedy_best_first_search,
 }
 
 pygame.init()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("BFS / DFS / Dijkstra Learner")
+pygame.display.set_caption("BFS / DFS / Dijkstra / Greedy Learner")
 
 clock = pygame.time.Clock()
 
@@ -119,6 +120,9 @@ while running:
 
             if ui.dijkstra_button.collidepoint(mouse_pos):
                 check_answer("Dijkstra")
+
+            if ui.greedy_button.collidepoint(mouse_pos):
+                check_answer("Greedy")
 
             if ui.replay_button.collidepoint(mouse_pos):
 

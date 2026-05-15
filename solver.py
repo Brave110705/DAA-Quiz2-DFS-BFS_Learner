@@ -113,3 +113,43 @@ class Solver:
                     heapq.heappush(priority_queue, (new_cost, neighbor))
 
         return traversal
+
+    @staticmethod
+    def _manhattan_distance(current, goal):
+
+        current_x, current_y = current
+        goal_x, goal_y = goal
+
+        return abs(current_x - goal_x) + abs(current_y - goal_y)
+
+    @staticmethod
+    def greedy_best_first_search(maze, start, goal):
+
+        priority_queue = [(Solver._manhattan_distance(start, goal), start)]
+        visited = set()
+        visited.add(start)
+        traversal = []
+
+        while priority_queue:
+
+            _, current = heapq.heappop(priority_queue)
+
+            traversal.append(current)
+
+            if current == goal:
+                break
+
+            for nx, ny in Solver._neighbors(current):
+
+                neighbor = (nx, ny)
+
+                if (
+                    maze.is_walkable(nx, ny)
+                    and neighbor not in visited
+                ):
+
+                    visited.add(neighbor)
+                    priority = Solver._manhattan_distance(neighbor, goal)
+                    heapq.heappush(priority_queue, (priority, neighbor))
+
+        return traversal
