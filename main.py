@@ -13,11 +13,16 @@ ROWS = 10
 COLS = 10
 
 BACKGROUND = (220, 220, 220)
+ALGORITHMS = {
+    "BFS": Solver.bfs,
+    "DFS": Solver.dfs,
+    "Dijkstra": Solver.dijkstra,
+}
 
 pygame.init()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("BFS / DFS Learner")
+pygame.display.set_caption("BFS / DFS / Dijkstra Learner")
 
 clock = pygame.time.Clock()
 
@@ -38,7 +43,8 @@ streak = 0
 
 message = ""
 
-def start_round():
+
+def start_round(clear_message=True):
 
     global maze
     global visited_steps
@@ -47,19 +53,16 @@ def start_round():
     global algorithm_used
     global message
 
-    message = ""
+    if clear_message:
+        message = ""
 
     maze.generate()
 
     start = (0, 0)
     goal = (COLS - 1, ROWS - 1)
 
-    algorithm_used = random.choice(["BFS", "DFS"])
-
-    if algorithm_used == "BFS":
-        visited_steps = Solver.bfs(maze, start, goal)
-    else:
-        visited_steps = Solver.dfs(maze, start, goal)
+    algorithm_used = random.choice(list(ALGORITHMS.keys()))
+    visited_steps = ALGORITHMS[algorithm_used](maze, start, goal)
 
     current_step = 0
 
@@ -86,7 +89,8 @@ def check_answer(answer):
 
         message = f"Wrong! It was {algorithm_used}"
 
-    start_round()
+    start_round(clear_message=False)
+
 
 start_round()
 
@@ -113,6 +117,9 @@ while running:
             if ui.dfs_button.collidepoint(mouse_pos):
                 check_answer("DFS")
 
+            if ui.dijkstra_button.collidepoint(mouse_pos):
+                check_answer("Dijkstra")
+
             if ui.replay_button.collidepoint(mouse_pos):
 
                 current_step = 0
@@ -137,7 +144,7 @@ while running:
     maze.draw(
         screen,
         visited_steps,
-         current_step,
+        current_step,
         goal_reached
     )
 

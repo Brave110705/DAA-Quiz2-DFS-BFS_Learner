@@ -8,16 +8,31 @@ GRAY = (100, 100, 100)
 BLUE = (80, 140, 255)
 YELLOW = (255, 220, 100)
 GREEN = (100, 255, 100)
+BROWN = (120, 80, 45)
 
 CELL_SIZE = 50
 OFFSET_X = 150
 OFFSET_Y = 80
 SOURCE_TILE_SIZE = 16
 TILESET_PATH = Path(__file__).with_name("stone_to_void.png")
-WALL_TILE_POSITION = (0, 4)
+
+FLOOR = 0
+WALL = 1
+MUD = 2
+
 FLOOR_TILE_POSITION = (1, 1)
+WALL_TILE_POSITION = (0, 4)
+MUD_TILE_POSITION = (1, 4)
+
+FLOOR_COST = 1
+MUD_COST = 5
+
+WALL_CHANCE = 0.25
+MUD_CHANCE = 0.15
+
 
 goal_reached = False
+
 
 class Maze:
 
@@ -46,6 +61,7 @@ class Maze:
         return {
             "wall": self._load_tile(tileset, WALL_TILE_POSITION),
             "floor": self._load_tile(tileset, FLOOR_TILE_POSITION),
+            "mud": self._load_tile(tileset, MUD_TILE_POSITION),
         }
 
     def _load_tile(self, tileset, atlas_position):
@@ -90,10 +106,17 @@ class Maze:
                 if (x == 0 and y == 0) or (
                     x == self.cols - 1 and y == self.rows - 1
                 ):
-                    row.append(0)
+                    row.append(FLOOR)
 
                 else:
-                    row.append(1 if random.random() < 0.25 else 0)
+                    roll = random.random()
+
+                    if roll < WALL_CHANCE:
+                        row.append(WALL)
+                    elif roll < WALL_CHANCE + MUD_CHANCE:
+                        row.append(MUD)
+                    else:
+                        row.append(FLOOR)
 
             grid.append(row)
 
@@ -101,15 +124,25 @@ class Maze:
 
     def _generate_fallback_grid(self):
 
-        grid = [[1 for _ in range(self.cols)] for _ in range(self.rows)]
+        grid = [[WALL for _ in range(self.cols)] for _ in range(self.rows)]
 
         for x in range(self.cols):
-            grid[0][x] = 0
+            grid[0][x] = FLOOR
 
         for y in range(self.rows):
-            grid[y][self.cols - 1] = 0
+            grid[y][self.cols - 1] = FLOOR
+
+        self._place_fallback_mud(grid)
 
         return grid
+
+    def _place_fallback_mud(self, grid):
+
+        for x in range(2, self.cols - 1, 3):
+            grid[0][x] = MUD
+
+        for y in range(2, self.rows - 1, 3):
+            grid[y][self.cols - 1] = MUD
 
     def _has_solution(self):
 
@@ -145,8 +178,44 @@ class Maze:
         return (
             0 <= x < self.cols
             and 0 <= y < self.rows
-            and self.grid[y][x] == 0
+            and self.grid[y][x] != WALL
         )
+
+    def get_movement_cost(self, x, y):
+
+        if not self.is_walkable(x, y):
+            return float("inf")
+
+        if self.grid[y][x] == MUD:
+            return MUD_COST
+
+        return FLOOR_COST
+
+    def _draw_base_tile(self, screen, rect, tile_type):
+
+        if tile_type == WALL:
+            wall_tile = self.tiles.get("wall")
+
+            if wall_tile:
+                screen.blit(wall_tile, rect)
+            else:
+                pygame.draw.rect(screen, BLACK, rect)
+
+        elif tile_type == MUD:
+            mud_tile = self.tiles.get("mud")
+
+            if mud_tile:
+                screen.blit(mud_tile, rect)
+            else:
+                pygame.draw.rect(screen, BROWN, rect)
+
+        else:
+            floor_tile = self.tiles.get("floor")
+
+            if floor_tile:
+                screen.blit(floor_tile, rect)
+            else:
+                pygame.draw.rect(screen, WHITE, rect)
 
     def draw(self, screen, visited_steps, current_step, goal_reached):
 
@@ -161,20 +230,7 @@ class Maze:
                     CELL_SIZE
                 )
 
-                if self.grid[y][x] == 1:
-                    wall_tile = self.tiles.get("wall")
-
-                    if wall_tile:
-                        screen.blit(wall_tile, rect)
-                    else:
-                        pygame.draw.rect(screen, BLACK, rect)
-                else:
-                    floor_tile = self.tiles.get("floor")
-
-                    if floor_tile:
-                        screen.blit(floor_tile, rect)
-                    else:
-                        pygame.draw.rect(screen, WHITE, rect)
+                self._draw_base_tile(screen, rect, self.grid[y][x])
 
                 pygame.draw.rect(screen, GRAY, rect, 1)
 
@@ -231,7 +287,7 @@ class Maze:
             CELL_SIZE,
             CELL_SIZE
         )
-        
+
         if goal_reached:
             pygame.draw.rect(screen, GREEN, end_rect)
         else:
