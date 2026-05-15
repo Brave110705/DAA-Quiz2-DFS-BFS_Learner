@@ -14,32 +14,8 @@ OFFSET_X = 150
 OFFSET_Y = 80
 SOURCE_TILE_SIZE = 16
 TILESET_PATH = Path(__file__).with_name("stone_to_void.png")
-
-WALL_NORTH = 1
-WALL_EAST = 2
-WALL_SOUTH = 4
-WALL_WEST = 8
-
-# 4-bit wall-neighbor mask -> atlas tile coordinate, in 16 px cells.
-# Tune these coordinates if you want a different tile from stone_to_void.png.
-WALL_AUTOTILES = {
-    0: (0, 0),
-    WALL_NORTH: (4, 0),
-    WALL_EAST: (2, 1),
-    WALL_NORTH | WALL_EAST: (2, 0),
-    WALL_SOUTH: (4, 2),
-    WALL_NORTH | WALL_SOUTH: (4, 1),
-    WALL_EAST | WALL_SOUTH: (2, 2),
-    WALL_NORTH | WALL_EAST | WALL_SOUTH: (3, 1),
-    WALL_WEST: (6, 1),
-    WALL_NORTH | WALL_WEST: (6, 0),
-    WALL_EAST | WALL_WEST: (5, 1),
-    WALL_NORTH | WALL_EAST | WALL_WEST: (5, 0),
-    WALL_SOUTH | WALL_WEST: (6, 2),
-    WALL_NORTH | WALL_SOUTH | WALL_WEST: (5, 2),
-    WALL_EAST | WALL_SOUTH | WALL_WEST: (3, 2),
-    WALL_NORTH | WALL_EAST | WALL_SOUTH | WALL_WEST: (3, 0),
-}
+WALL_TILE_POSITION = (0, 4)
+FLOOR_TILE_POSITION = (1, 1)
 
 goal_reached = False
 
@@ -53,11 +29,11 @@ class Maze:
         self.grid = []
 
         self.font = pygame.font.SysFont(None, 36)
-        self.wall_tiles = self._load_wall_tiles()
+        self.tiles = self._load_tiles()
 
         self.generate()
 
-    def _load_wall_tiles(self):
+    def _load_tiles(self):
 
         if not TILESET_PATH.exists():
             return {}
@@ -66,25 +42,27 @@ class Maze:
 
         if pygame.display.get_surface():
             tileset = tileset.convert_alpha()
-        tiles = {}
 
-        for mask, atlas_position in WALL_AUTOTILES.items():
-            atlas_x, atlas_y = atlas_position
+        return {
+            "wall": self._load_tile(tileset, WALL_TILE_POSITION),
+            "floor": self._load_tile(tileset, FLOOR_TILE_POSITION),
+        }
 
-            tile_rect = pygame.Rect(
-                atlas_x * SOURCE_TILE_SIZE,
-                atlas_y * SOURCE_TILE_SIZE,
-                SOURCE_TILE_SIZE,
-                SOURCE_TILE_SIZE
-            )
+    def _load_tile(self, tileset, atlas_position):
 
-            if not tileset.get_rect().contains(tile_rect):
-                continue
+        atlas_x, atlas_y = atlas_position
+        tile_rect = pygame.Rect(
+            atlas_x * SOURCE_TILE_SIZE,
+            atlas_y * SOURCE_TILE_SIZE,
+            SOURCE_TILE_SIZE,
+            SOURCE_TILE_SIZE
+        )
 
-            tile = tileset.subsurface(tile_rect).copy()
-            tiles[mask] = pygame.transform.scale(tile, (CELL_SIZE, CELL_SIZE))
+        if not tileset.get_rect().contains(tile_rect):
+            return None
 
-        return tiles
+        tile = tileset.subsurface(tile_rect).copy()
+        return pygame.transform.scale(tile, (CELL_SIZE, CELL_SIZE))
 
     def generate(self):
 
@@ -114,32 +92,6 @@ class Maze:
             and self.grid[y][x] == 0
         )
 
-    def _is_wall(self, x, y):
-
-        return (
-            0 <= x < self.cols
-            and 0 <= y < self.rows
-            and self.grid[y][x] == 1
-        )
-
-    def _get_wall_mask(self, x, y):
-
-        mask = 0
-
-        if self._is_wall(x, y - 1):
-            mask |= WALL_NORTH
-
-        if self._is_wall(x + 1, y):
-            mask |= WALL_EAST
-
-        if self._is_wall(x, y + 1):
-            mask |= WALL_SOUTH
-
-        if self._is_wall(x - 1, y):
-            mask |= WALL_WEST
-
-        return mask
-
     def draw(self, screen, visited_steps, current_step, goal_reached):
 
         for y in range(self.rows):
@@ -154,15 +106,19 @@ class Maze:
                 )
 
                 if self.grid[y][x] == 1:
-                    wall_mask = self._get_wall_mask(x, y)
-                    wall_tile = self.wall_tiles.get(wall_mask)
+                    wall_tile = self.tiles.get("wall")
 
                     if wall_tile:
                         screen.blit(wall_tile, rect)
                     else:
                         pygame.draw.rect(screen, BLACK, rect)
                 else:
-                    pygame.draw.rect(screen, WHITE, rect)
+                    floor_tile = self.tiles.get("floor")
+
+                    if floor_tile:
+                        screen.blit(floor_tile, rect)
+                    else:
+                        pygame.draw.rect(screen, WHITE, rect)
 
                 pygame.draw.rect(screen, GRAY, rect, 1)
 
