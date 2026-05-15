@@ -66,7 +66,20 @@ class Maze:
 
     def generate(self):
 
-        self.grid = []
+        max_attempts = 100
+
+        for _ in range(max_attempts):
+
+            self.grid = self._generate_random_grid()
+
+            if self._has_solution():
+                return
+
+        self.grid = self._generate_fallback_grid()
+
+    def _generate_random_grid(self):
+
+        grid = []
 
         for y in range(self.rows):
 
@@ -82,7 +95,50 @@ class Maze:
                 else:
                     row.append(1 if random.random() < 0.25 else 0)
 
-            self.grid.append(row)
+            grid.append(row)
+
+        return grid
+
+    def _generate_fallback_grid(self):
+
+        grid = [[1 for _ in range(self.cols)] for _ in range(self.rows)]
+
+        for x in range(self.cols):
+            grid[0][x] = 0
+
+        for y in range(self.rows):
+            grid[y][self.cols - 1] = 0
+
+        return grid
+
+    def _has_solution(self):
+
+        start = (0, 0)
+        goal = (self.cols - 1, self.rows - 1)
+        stack = [start]
+        visited = {start}
+
+        while stack:
+
+            current = stack.pop()
+
+            if current == goal:
+                return True
+
+            x, y = current
+
+            for nx, ny in (
+                (x + 1, y),
+                (x, y + 1),
+                (x - 1, y),
+                (x, y - 1)
+            ):
+
+                if self.is_walkable(nx, ny) and (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+
+        return False
 
     def is_walkable(self, x, y):
 
